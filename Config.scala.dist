@@ -1,0 +1,7 @@
+object Config {
+
+  val token = "your token"
+
+  val room_id = "your room id"
+
+}
