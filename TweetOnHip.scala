@@ -1,3 +1,5 @@
+import scalaz.{ Success , Failure, NonEmptyList }
+import ornicar.scalalib.{Validation , Common }
 import dispatch._
 import Config._
 import org.joda.time.DateTime
@@ -12,41 +14,67 @@ case class Tweet(
   text: String
 )
 
-object TweetOnHip {
+object TweetOnHip extends Validation {
 
-  val message = "bluk bluk!"
+  def withHttp[A](f: Http => Promise[A]): Promise[A] = {
+    val http = new Http
+    val promise = f(http)
+    promise onComplete (_ => http.shutdown)
+    promise
+  }
 
-  val hipPost = url("http://api.hipchat.com/v1/rooms/message")
-    .addQueryParameter("auth_token", token)
-    .addParameter("from", "tweet on hip")
-    .addParameter("room_id", room_id)
-    .addParameter("message", message)
-    .POST
+  def post(from: String, message: String): Promise[Unit] = {
+    val hipPost = url("http://api.hipchat.com/v1/rooms/message")
+      .addQueryParameter("auth_token", token)
+      .addParameter("from", from)
+      .addParameter("room_id", room_id)
+      .addParameter("message", message)
+      .POST
 
-  private val dateFormat = "YYYY-MM-dd"
-  private val dateFormatter = DateTimeFormat forPattern dateFormat
+      withHttp(_(hipPost OK as.String)) map (_ => Unit)
+  }
 
-  val twitGet = url("http://search.twitter.com/search.json")
-    .addQueryParameter("q", "obama since:%s".format(dateFormatter print DateTime.now))
-
-  def main(args: Array[String]) {
-    implicit val formats = DefaultFormats
-    val response = Http(twitGet OK as.String)
-    for (raw <- response) {
-      try {
-        val json = JsonParser parse raw
-        val resultsJson = json \ "results"
-        val tweets = resultsJson.extract[List[Tweet]]
-        println(tweets)
-      } finally {
-        Http.shutdown
-      }
+  def parseJson(jsonString: String): Valid[List[Tweet]] = try {
+      implicit val formats = DefaultFormats
+      val json = JsonParser parse jsonString
+      val resultsJson = json \ "results"
+      Success(resultsJson.extract[List[Tweet]])
+    } catch {
+      case e => Failure(NonEmptyList("Error: " + e.toString))
     }
 
-    /* val promise = Http(hipPost OK as.String) */
-    /* for (r <- promise) { */
-    /*   println(r) */
-    /*   Http.shutdown */
-    /* } */
+  def tweetsOfTheDay: Promise[Valid[List[Tweet]]] = {
+    val dateFormat = "YYYY-MM-dd"
+    val dateFormatter = DateTimeFormat forPattern dateFormat
+
+    val search = url("http://search.twitter.com/search.json")
+      .addQueryParameter("q", "@jirafe since:%s".format(dateFormatter print DateTime.now))
+
+    val promise = withHttp(_(search OK as.String).option)
+    promise map { rawOption =>
+      for {
+        raw <- rawOption toValid "Network error"
+        tweets <- parseJson(raw)
+      } yield tweets
+    }
+  }
+
+  def main(args: Array[String]) {
+
+    for {
+      validList <- tweetsOfTheDay
+      p <- validList fold (
+        errs => {
+          printLnFailures(errs)
+          Promise("err")
+        },
+        list => list.headOption match {
+          case Some(tweet) => post(tweet.from_user, tweet.text)
+          case None => Promise(Unit)
+        }
+      )
+    } {
+      validList map { list => println(list) }
+    }
   }
 }
