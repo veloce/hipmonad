@@ -26,7 +26,7 @@ object TweetOnHip extends Validation {
   def post(from: String, message: String): Promise[Unit] = {
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", token)
-      .addParameter("from", "twig on hip")
+      .addParameter("from", "twitOnHip")
       .addParameter("room_id", room_id)
       .addParameter("message", "@%s: %s".format(from, message))
       .POST
