@@ -77,7 +77,7 @@ object TweetOnHip extends Validation {
         list => postTweets(list take 5)
       )
     } {
-      validList map { list => println(list) }
+      validList foreach println
     }
   }
 }
