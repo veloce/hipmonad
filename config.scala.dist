@@ -1,4 +1,4 @@
-object Config {
+object config {
 
   val token = "your token"
 

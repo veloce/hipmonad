@@ -1,7 +1,7 @@
 import scalaz.{ Success , Failure, NonEmptyList }
 import ornicar.scalalib.{Validation , Common }
 import dispatch._
-import Config._
+import config.{ token, room_id }
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import net.liftweb.json.JsonParser
