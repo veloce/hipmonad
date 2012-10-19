@@ -26,12 +26,19 @@ object TweetOnHip extends Validation {
   def post(from: String, message: String): Promise[Unit] = {
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", token)
-      .addParameter("from", from)
+      .addParameter("from", "twig on hip")
       .addParameter("room_id", room_id)
-      .addParameter("message", message)
+      .addParameter("message", "@%s: %s".format(from, message))
       .POST
 
       withHttp(_(hipPost OK as.String)) map (_ => Unit)
+  }
+
+  def postTweets(list: List[Tweet]): Promise[Unit] = {
+    val listP = for (tweet <- list)
+      yield post(tweet.from_user, tweet.text)
+
+    Promise all listP map (_ => Unit)
   }
 
   def parseJson(jsonString: String): Valid[List[Tweet]] = try {
@@ -60,18 +67,14 @@ object TweetOnHip extends Validation {
   }
 
   def main(args: Array[String]) {
-
     for {
       validList <- tweetsOfTheDay
       p <- validList fold (
         errs => {
           printLnFailures(errs)
-          Promise("err")
+          Promise()
         },
-        list => list.headOption match {
-          case Some(tweet) => post(tweet.from_user, tweet.text)
-          case None => Promise(Unit)
-        }
+        list => postTweets(list take 5)
       )
     } {
       validList map { list => println(list) }
