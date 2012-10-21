@@ -59,7 +59,7 @@ object TweetOnHip extends Validation {
     val dateFormatter = DateTimeFormat forPattern dateFormat
 
     val search = url("http://search.twitter.com/search.json")
-      .addQueryParameter("q", "@jirafe since:%s".format(dateFormatter print DateTime.now))
+      .addQueryParameter("q", "%s since:%s".format(config.search_pattern, dateFormatter print DateTime.now))
 
     val promise = withHttp(_(search OK as.String).option)
     promise map { rawOption ⇒

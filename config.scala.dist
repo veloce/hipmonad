@@ -6,4 +6,6 @@ object config {
 
   val room_id = "your room id"
 
+  val search_pattern = "@jirafe"
+
 }
