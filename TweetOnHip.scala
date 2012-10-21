@@ -59,6 +59,8 @@ object TweetOnHip extends Validation {
 
     val search = url("http://search.twitter.com/search.json")
       .addQueryParameter("q", "%s since:%s".format(config.search_pattern, dateFormatter print DateTime.now))
+      .addQueryParameter("result_type", "recent")
+      .addQueryParameter("rpp", "100")
       .addQueryParameter("since_id", sinceId toString)
 
     val promise = withHttp(_(search OK as.String).option)
