@@ -39,7 +39,10 @@ object TweetOnHip extends Validation {
     val listP = for (tweet <- list)
       yield post(tweet.from_user, tweet.text)
 
-    Promise all listP map (_ => Unit)
+    listP match {
+      case _ :: _ => Promise all listP map (_ => Unit)
+      case Nil => Promise.apply(Unit)
+    }
   }
 
   def parseJson(jsonString: String): Valid[List[Tweet]] = try {
@@ -72,12 +75,11 @@ object TweetOnHip extends Validation {
   }
 
   def run {
-    for {
-      validList <- tweetsOfTheDay
-      hipResponse <- validList fold (
+    tweetsOfTheDay flatMap { validList =>
+      validList fold (
         errs => {
           printLnFailures(errs map (s => "%s: %s".format(DateTime.now, s)))
-          Promise()
+          Promise.apply(Unit)
         },
         list => {
           val toPost = list filter (e => e.created_at > DateTime.now - 1.minute)
@@ -85,8 +87,9 @@ object TweetOnHip extends Validation {
           postTweets(toPost)
         }
       )
-    } { }
-    Thread.sleep(60 * 1000)
-    run
+    } onComplete { _ =>
+      Thread.sleep(60 * 1000);
+      run
+    }
   }
 }
