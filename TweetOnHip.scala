@@ -1,7 +1,6 @@
 import scalaz.{ Success , Failure, NonEmptyList }
 import ornicar.scalalib.{Validation , Common }
 import dispatch._
-import config.{ token, room_id }
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import org.scala_tools.time.Imports._
@@ -27,9 +26,9 @@ object TweetOnHip extends Validation {
 
   def post(from: String, message: String): Promise[Unit] = {
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
-      .addQueryParameter("auth_token", token)
+      .addQueryParameter("auth_token", config.token)
       .addParameter("from", "twitOnHip")
-      .addParameter("room_id", room_id)
+      .addParameter("room_id", config.room_id)
       .addParameter("message", "@%s: %s".format(from, message))
       .POST
 
