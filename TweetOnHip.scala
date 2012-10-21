@@ -4,6 +4,7 @@ import dispatch._
 import config.{ token, room_id }
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import org.scala_tools.time.Imports._
 import net.liftweb.json.JsonParser
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json._
@@ -60,24 +61,32 @@ object TweetOnHip extends Validation {
     val promise = withHttp(_(search OK as.String).option)
     promise map { rawOption =>
       for {
-        raw <- rawOption toValid "Network error"
+        raw <- rawOption toValid "Twitter api call returned an error"
         tweets <- parseJson(raw)
       } yield tweets
     }
   }
 
   def main(args: Array[String]) {
+    run
+  }
+
+  def run {
     for {
       validList <- tweetsOfTheDay
-      p <- validList fold (
+      hipResponse <- validList fold (
         errs => {
-          printLnFailures(errs)
+          printLnFailures(errs map (s => "%s: %s".format(DateTime.now, s)))
           Promise()
         },
-        list => postTweets(list take 5)
+        list => {
+          val toPost = list filter (e => e.created_at > DateTime.now - 1.minute)
+          println(toPost map (s => "%s: %s".format(DateTime.now, s)))
+          postTweets(toPost)
+        }
       )
-    } {
-      validList foreach println
-    }
+    } { }
+    Thread.sleep(60 * 1000)
+    run
   }
 }
