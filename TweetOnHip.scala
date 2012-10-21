@@ -9,13 +9,14 @@ import net.liftweb.json.JsonParser
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json._
 
-case class Tweet(
-  created_at: DateTime,
-  from_user: String,
-  text: String
-)
-
 object TweetOnHip extends Validation {
+
+  case class Tweet(
+    id: Int,
+    created_at: DateTime,
+    from_user: String,
+    text: String
+  )
 
   def withHttp[A](f: Http => Promise[A]): Promise[A] = {
     val http = new Http
