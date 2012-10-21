@@ -54,7 +54,7 @@ object TweetOnHip extends Validation {
       case e => Failure(NonEmptyList("Error: " + e.toString))
     }
 
-  def tweetsOfTheDay: Promise[Valid[List[Tweet]]] = {
+  def lastTweets: Promise[Valid[List[Tweet]]] = {
     val dateFormat = "YYYY-MM-dd"
     val dateFormatter = DateTimeFormat forPattern dateFormat
 
@@ -66,7 +66,7 @@ object TweetOnHip extends Validation {
       for {
         raw <- rawOption toValid "Twitter api call returned an error"
         tweets <- parseJson(raw)
-      } yield tweets
+      } yield tweets filter (e => e.created_at > DateTime.now - 1.minute)
     }
   }
 
@@ -75,16 +75,15 @@ object TweetOnHip extends Validation {
   }
 
   def run {
-    tweetsOfTheDay flatMap { validList =>
+    lastTweets flatMap { validList =>
       validList fold (
         errs => {
           printLnFailures(errs map (s => "%s: %s".format(DateTime.now, s)))
           Promise.apply(Unit)
         },
         list => {
-          val toPost = list filter (e => e.created_at > DateTime.now - 1.minute)
-          println(toPost map (s => "%s: %s".format(DateTime.now, s)))
-          postTweets(toPost)
+          println(list map (s => "%s: %s".format(DateTime.now, s)))
+          postTweets(list)
         }
       )
     } onComplete { _ =>
