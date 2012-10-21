@@ -12,7 +12,7 @@ resolvers += "sonatype" at "http://oss.sonatype.org/content/repositories/release
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
-libraryDependencies += "com.github.ornicar" % "scalalib_2.9.1" % "2.4"
+libraryDependencies += "com.github.ornicar" % "scalalib_2.9.1" % "2.6"
 
 libraryDependencies += "org.specs2" %% "specs2" % "1.12"
 
