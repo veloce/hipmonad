@@ -8,4 +8,6 @@ object config {
 
   val search_pattern = "@jirafe"
 
+  val twitter_check_interval = 60 // time in second between two checks
+                                  // beware of twitter search api rate limit
 }

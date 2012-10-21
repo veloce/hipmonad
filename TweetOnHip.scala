@@ -68,7 +68,8 @@ object TweetOnHip extends Validation {
       for {
         raw ← rawOption toValid "Twitter api call returned an error"
         tweets ← parseJson(raw)
-      } yield tweets filter (e ⇒ e.created_at > DateTime.now - 1.minute)
+      } yield tweets filter (e ⇒
+        e.created_at > DateTime.now - config.twitter_check_interval.second)
     }
   }
 
@@ -89,7 +90,7 @@ object TweetOnHip extends Validation {
         }
       )
     } onComplete { either ⇒
-      Thread.sleep(60 * 1000)
+      Thread.sleep(config.twitter_check_interval * 1000)
       either match {
         case Left(e) ⇒ {
           println(e)
