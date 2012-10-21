@@ -34,14 +34,13 @@ object TweetOnHip extends Validation {
     withHttp(_(hipPost OK as.String)) map (_ ⇒ Unit)
   }
 
-  def postTweets(list: List[Tweet]): Promise[Unit] = {
-    val listP = for (tweet ← list)
-      yield post(tweet.from_user, tweet.text)
-
-    listP match {
-      case _ :: _ ⇒ Promise all listP map (_ ⇒ Unit)
-      case Nil    ⇒ Promise.apply(Unit)
+  def postTweets(list: List[Tweet]): Promise[Option[Int]] = {
+    val ids = for (tweet ← list) yield {
+      post(tweet.from_user, tweet.text)
+      tweet.id
     }
+
+    Promise apply ids.lastOption
   }
 
   def parseJson(jsonString: String): Valid[List[Tweet]] = try {
@@ -54,12 +53,13 @@ object TweetOnHip extends Validation {
     case e ⇒ Failure(NonEmptyList("Error: " + e.toString))
   }
 
-  def lastTweets: Promise[Valid[List[Tweet]]] = {
+  def lastTweets(sinceId: Int): Promise[Valid[List[Tweet]]] = {
     val dateFormat = "YYYY-MM-dd"
     val dateFormatter = DateTimeFormat forPattern dateFormat
 
     val search = url("http://search.twitter.com/search.json")
       .addQueryParameter("q", "%s since:%s".format(config.search_pattern, dateFormatter print DateTime.now))
+      .addQueryParameter("since_id", sinceId toString)
 
     val promise = withHttp(_(search OK as.String).option)
     promise map { rawOption ⇒
@@ -71,24 +71,33 @@ object TweetOnHip extends Validation {
   }
 
   def main(args: Array[String]) {
-    run
+    run(0)
   }
 
-  def run {
-    lastTweets flatMap { validList ⇒
+  def run(sinceId: Int) {
+    lastTweets(sinceId) flatMap { validList ⇒
       validList fold (
         errs ⇒ {
           printLnFailures(errs map (s ⇒ "%s: %s".format(DateTime.now, s)))
-          Promise.apply(Unit)
+          Promise apply None
         },
         list ⇒ {
           println(list map (s ⇒ "%s: %s".format(DateTime.now, s)))
           postTweets(list)
         }
       )
-    } onComplete { _ ⇒
-      Thread.sleep(60 * 1000);
-      run
+    } onComplete { either ⇒
+      Thread.sleep(60 * 1000)
+      either match {
+        case Left(e) ⇒ {
+          println(e)
+          run(sinceId)
+        }
+        case Right(optionId) ⇒ optionId fold (
+          newId ⇒ run(newId),
+          run(sinceId)
+        )
+      }
     }
   }
 }
