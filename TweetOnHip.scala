@@ -1,5 +1,5 @@
-import scalaz.{ Success , Failure, NonEmptyList }
-import ornicar.scalalib.{Validation , Common }
+import scalaz.{ Success, Failure, NonEmptyList }
+import ornicar.scalalib.{ Validation, Common }
 import dispatch._
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
@@ -14,13 +14,12 @@ object TweetOnHip extends Validation {
     id: Int,
     created_at: DateTime,
     from_user: String,
-    text: String
-  )
+    text: String)
 
-  def withHttp[A](f: Http => Promise[A]): Promise[A] = {
+  def withHttp[A](f: Http ⇒ Promise[A]): Promise[A] = {
     val http = new Http
     val promise = f(http)
-    promise onComplete (_ => http.shutdown)
+    promise onComplete (_ ⇒ http.shutdown)
     promise
   }
 
@@ -32,27 +31,28 @@ object TweetOnHip extends Validation {
       .addParameter("message", "@%s: %s".format(from, message))
       .POST
 
-      withHttp(_(hipPost OK as.String)) map (_ => Unit)
+    withHttp(_(hipPost OK as.String)) map (_ ⇒ Unit)
   }
 
   def postTweets(list: List[Tweet]): Promise[Unit] = {
-    val listP = for (tweet <- list)
+    val listP = for (tweet ← list)
       yield post(tweet.from_user, tweet.text)
 
     listP match {
-      case _ :: _ => Promise all listP map (_ => Unit)
-      case Nil => Promise.apply(Unit)
+      case _ :: _ ⇒ Promise all listP map (_ ⇒ Unit)
+      case Nil    ⇒ Promise.apply(Unit)
     }
   }
 
   def parseJson(jsonString: String): Valid[List[Tweet]] = try {
-      implicit val formats = DefaultFormats
-      val json = JsonParser parse jsonString
-      val resultsJson = json \ "results"
-      Success(resultsJson.extract[List[Tweet]])
-    } catch {
-      case e => Failure(NonEmptyList("Error: " + e.toString))
-    }
+    implicit val formats = DefaultFormats
+    val json = JsonParser parse jsonString
+    val resultsJson = json \ "results"
+    Success(resultsJson.extract[List[Tweet]])
+  }
+  catch {
+    case e ⇒ Failure(NonEmptyList("Error: " + e.toString))
+  }
 
   def lastTweets: Promise[Valid[List[Tweet]]] = {
     val dateFormat = "YYYY-MM-dd"
@@ -62,11 +62,11 @@ object TweetOnHip extends Validation {
       .addQueryParameter("q", "@jirafe since:%s".format(dateFormatter print DateTime.now))
 
     val promise = withHttp(_(search OK as.String).option)
-    promise map { rawOption =>
+    promise map { rawOption ⇒
       for {
-        raw <- rawOption toValid "Twitter api call returned an error"
-        tweets <- parseJson(raw)
-      } yield tweets filter (e => e.created_at > DateTime.now - 1.minute)
+        raw ← rawOption toValid "Twitter api call returned an error"
+        tweets ← parseJson(raw)
+      } yield tweets filter (e ⇒ e.created_at > DateTime.now - 1.minute)
     }
   }
 
@@ -75,18 +75,18 @@ object TweetOnHip extends Validation {
   }
 
   def run {
-    lastTweets flatMap { validList =>
+    lastTweets flatMap { validList ⇒
       validList fold (
-        errs => {
-          printLnFailures(errs map (s => "%s: %s".format(DateTime.now, s)))
+        errs ⇒ {
+          printLnFailures(errs map (s ⇒ "%s: %s".format(DateTime.now, s)))
           Promise.apply(Unit)
         },
-        list => {
-          println(list map (s => "%s: %s".format(DateTime.now, s)))
+        list ⇒ {
+          println(list map (s ⇒ "%s: %s".format(DateTime.now, s)))
           postTweets(list)
         }
       )
-    } onComplete { _ =>
+    } onComplete { _ ⇒
       Thread.sleep(60 * 1000);
       run
     }
