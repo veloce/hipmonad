@@ -12,10 +12,13 @@ object TweetOnHip extends Validation {
 
   case class Tweet(
       id: Long,
-      created_at: DateTime,
+      created_at: String,
       from_user: String,
       text: String) {
-    override def toString = "%s: id: %s - %s".format(created_at, id, from_user)
+
+    def createdAt = created_at
+    def fromUser = from_user
+    override def toString = "%s: id: %s - %s".format(createdAt, id, fromUser)
   }
 
   def withHttp[A](f: Http ⇒ Promise[A]): Promise[A] = {
@@ -38,7 +41,7 @@ object TweetOnHip extends Validation {
 
   def postTweets(list: List[Tweet]): Promise[Option[Long]] = {
     val ids = for (tweet ← list) yield {
-      post(tweet.from_user, tweet.text)
+      post(tweet.fromUser, tweet.text)
       tweet.id
     }
 
@@ -70,8 +73,7 @@ object TweetOnHip extends Validation {
       for {
         raw ← rawOption toValid "Twitter api call returned an error"
         tweets ← parseJson(raw)
-      } yield tweets filter (e ⇒
-        e.created_at > DateTime.now - config.twitter_check_interval.second)
+      } yield tweets
     }
   }
 
