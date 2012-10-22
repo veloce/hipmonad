@@ -11,12 +11,12 @@ import net.liftweb.json._
 object TweetOnHip extends Validation {
 
   case class Tweet(
-    id: Long,
-    created_at: DateTime,
-    from_user: String,
-    text: String) {
-      override def toString = "%s: id: %s - %s".format(created_at, id, from_user)
-    }
+      id: Long,
+      created_at: DateTime,
+      from_user: String,
+      text: String) {
+    override def toString = "%s: id: %s - %s".format(created_at, id, from_user)
+  }
 
   def withHttp[A](f: Http ⇒ Promise[A]): Promise[A] = {
     val http = new Http
