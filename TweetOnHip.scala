@@ -11,7 +11,7 @@ import net.liftweb.json._
 object TweetOnHip extends Validation {
 
   case class Tweet(
-    id: Int,
+    id: Long,
     created_at: DateTime,
     from_user: String,
     text: String)
@@ -34,13 +34,13 @@ object TweetOnHip extends Validation {
     withHttp(_(hipPost OK as.String)) map (_ ⇒ Unit)
   }
 
-  def postTweets(list: List[Tweet]): Promise[Option[Int]] = {
+  def postTweets(list: List[Tweet]): Promise[Option[Long]] = {
     val ids = for (tweet ← list) yield {
       post(tweet.from_user, tweet.text)
       tweet.id
     }
 
-    Promise apply ids.lastOption
+    Promise apply ids.headOption
   }
 
   def parseJson(jsonString: String): Valid[List[Tweet]] = try {
@@ -53,7 +53,7 @@ object TweetOnHip extends Validation {
     case e ⇒ Failure(NonEmptyList("Error: " + e.toString))
   }
 
-  def lastTweets(sinceId: Int): Promise[Valid[List[Tweet]]] = {
+  def lastTweets(sinceId: Long): Promise[Valid[List[Tweet]]] = {
     val dateFormat = "YYYY-MM-dd"
     val dateFormatter = DateTimeFormat forPattern dateFormat
 
@@ -77,7 +77,7 @@ object TweetOnHip extends Validation {
     run(0)
   }
 
-  def run(sinceId: Int) {
+  def run(sinceId: Long) {
     lastTweets(sinceId) flatMap { validList ⇒
       validList fold (
         errs ⇒ {
