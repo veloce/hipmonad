@@ -14,7 +14,9 @@ object TweetOnHip extends Validation {
     id: Long,
     created_at: DateTime,
     from_user: String,
-    text: String)
+    text: String) {
+      override def toString = "%s: id: %s - %s".format(created_at, id, from_user)
+    }
 
   def withHttp[A](f: Http ⇒ Promise[A]): Promise[A] = {
     val http = new Http
@@ -85,7 +87,8 @@ object TweetOnHip extends Validation {
           Promise apply None
         },
         list ⇒ {
-          println(list map (s ⇒ "%s: %s".format(DateTime.now, s)))
+          println("*----* %s *----*".format(DateTime.now))
+          list foreach println
           postTweets(list)
         }
       )
