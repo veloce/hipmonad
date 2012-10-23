@@ -16,7 +16,9 @@ object TweetOnHip extends Validation {
       from_user: String,
       text: String) {
 
-    def createdAt = created_at
+    private val fmt = DateTimeFormat forPattern "EEE, dd MMM yyyy HH:mm:ss Z"
+
+    def createdAt = fmt.parseDateTime(created_at)
     def fromUser = from_user
     override def toString = "%s: id: %s - %s".format(createdAt, id, fromUser)
   }
@@ -59,11 +61,10 @@ object TweetOnHip extends Validation {
   }
 
   def lastTweets(sinceId: Long): Promise[Valid[List[Tweet]]] = {
-    val dateFormat = "YYYY-MM-dd"
-    val dateFormatter = DateTimeFormat forPattern dateFormat
+    val fmt = DateTimeFormat forPattern "YYYY-MM-dd"
 
     val search = url("http://search.twitter.com/search.json")
-      .addQueryParameter("q", "%s since:%s".format(config.search_pattern, dateFormatter print DateTime.now))
+      .addQueryParameter("q", "%s since:%s".format(config.search_pattern, fmt print DateTime.now))
       .addQueryParameter("result_type", "recent")
       .addQueryParameter("rpp", "100")
       .addQueryParameter("since_id", sinceId toString)
@@ -73,7 +74,8 @@ object TweetOnHip extends Validation {
       for {
         raw ← rawOption toValid "Twitter api call returned an error"
         tweets ← parseJson(raw)
-      } yield tweets
+      } yield tweets filter (e ⇒
+        e.createdAt > DateTime.now - config.twitter_check_interval.second - 30.second)
     }
   }
 
