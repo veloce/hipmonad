@@ -84,30 +84,29 @@ object TweetOnHip extends Validation {
   }
 
   def run(sinceId: Long) {
-    lastTweets(sinceId) flatMap { validList ⇒
-      validList fold (
-        errs ⇒ {
-          printLnFailures(errs map (s ⇒ "%s: %s".format(DateTime.now, s)))
-          Promise apply None
-        },
-        list ⇒ {
-          println("*----* %s *----*".format(DateTime.now))
-          list foreach println
-          postTweets(list)
-        }
-      )
-    } onComplete { either ⇒
-      Thread.sleep(config.twitter_check_interval * 1000)
-      either match {
-        case Left(e) ⇒ {
-          println(e)
-          run(sinceId)
-        }
-        case Right(optionId) ⇒ optionId fold (
-          newId ⇒ run(newId),
-          run(sinceId)
+    var currentSinceId = sinceId
+
+    while(true) {
+      val promise = lastTweets(sinceId) flatMap { validList ⇒
+        validList fold (
+          errs ⇒ {
+            printLnFailures(errs map (s ⇒ "%s: %s".format(DateTime.now, s)))
+            Promise apply None
+          },
+          list ⇒ {
+            println("*----* %s *----*".format(DateTime.now))
+            list foreach println
+            postTweets(list)
+          }
+        )
+      } onComplete { either ⇒
+        either fold (
+          e ⇒ println(e),
+          optionId ⇒ optionId map (newId => currentSinceId = newId)
         )
       }
+      promise()
+      Thread.sleep(config.twitter_check_interval * 1000)
     }
   }
 }
