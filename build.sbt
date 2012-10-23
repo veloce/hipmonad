@@ -6,8 +6,6 @@ resolvers += "repo.codahale.com" at "http://repo.codahale.com/"
 
 resolvers += "typesafe.com" at "http://repo.typesafe.com/typesafe/releases/"
 
-resolvers += "iliaz.com" at "http://scala.iliaz.com/"
-
 resolvers += "sonatype" at "http://oss.sonatype.org/content/repositories/releases"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
