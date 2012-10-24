@@ -31,6 +31,9 @@ object TweetOnHip extends Validation {
   }
 
   def post(from: String, message: String): Promise[Unit] = {
+
+    def formatMessage(from: String, msg: String): String = "bluk"
+
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", config.token)
       .addParameter("from", "twitOnHip")
@@ -87,7 +90,7 @@ object TweetOnHip extends Validation {
     var currentSinceId = sinceId
 
     while(true) {
-      val promise = lastTweets(sinceId) flatMap { validList ⇒
+      val promise = lastTweets(currentSinceId) flatMap { validList ⇒
         validList fold (
           errs ⇒ {
             printLnFailures(errs map (s ⇒ "%s: %s".format(DateTime.now, s)))
