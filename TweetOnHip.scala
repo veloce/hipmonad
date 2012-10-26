@@ -30,27 +30,26 @@ object TweetOnHip extends Validation {
     promise
   }
 
-  def post(from: String, message: String): Promise[Unit] = {
+  def post(tweet: Tweet): Promise[Option[Long]] = {
 
     def formatMessage(from: String, msg: String): String = "bluk"
 
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", config.token)
-      .addParameter("from", "twitOnHip")
+      .addParameter("from", "Jirafe on Twitter")
       .addParameter("room_id", config.room_id)
-      .addParameter("message", "@%s: %s".format(from, message))
+      .addParameter("message", "@%s: %s".format(tweet.fromUser, tweet.text))
       .POST
 
-    withHttp(_(hipPost OK as.String)) map (_ ⇒ Unit)
+    withHttp(_(hipPost OK as.String).option) map (_ ⇒ Some(tweet.id))
   }
 
   def postTweets(list: List[Tweet]): Promise[Option[Long]] = {
     val ids = for (tweet ← list) yield {
-      post(tweet.fromUser, tweet.text)
-      tweet.id
+      post(tweet)
     }
 
-    Promise apply ids.headOption
+    ids.headOption fold (identity, Promise(None))
   }
 
   def parseJson(jsonString: String): Valid[List[Tweet]] = try {
