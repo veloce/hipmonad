@@ -45,11 +45,13 @@ object TweetOnHip extends Validation {
   }
 
   def postTweets(list: List[Tweet]): Promise[Option[Long]] = {
-    val ids = for (tweet ← list) yield {
+    val promises = for (tweet ← list) yield {
       post(tweet)
     }
 
-    ids.headOption fold (identity, Promise(None))
+    Promise.all(promises) map { list =>
+      list.foldRight(None: Option[Long])(_ orElse _)
+    }
   }
 
   def parseJson(jsonString: String): Valid[List[Tweet]] = try {
