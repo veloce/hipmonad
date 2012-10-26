@@ -49,7 +49,7 @@ object TweetOnHip extends Validation {
       post(tweet)
     }
 
-    Promise.all(promises) map { list =>
+    Promise.all(promises) map { list ⇒
       list.foldRight(None: Option[Long])(_ orElse _)
     }
   }
@@ -90,7 +90,7 @@ object TweetOnHip extends Validation {
   def run(sinceId: Long) {
     var currentSinceId = sinceId
 
-    while(true) {
+    while (true) {
       val promise = lastTweets(currentSinceId) flatMap { validList ⇒
         validList fold (
           errs ⇒ {
@@ -106,7 +106,7 @@ object TweetOnHip extends Validation {
       } onComplete { either ⇒
         either fold (
           e ⇒ println(e),
-          optionId ⇒ optionId map (newId => currentSinceId = newId)
+          optionId ⇒ optionId map (newId ⇒ currentSinceId = newId)
         )
       }
       promise()
