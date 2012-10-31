@@ -30,28 +30,27 @@ object TweetOnHip extends Validation {
     promise
   }
 
-  def post(tweet: Tweet): Promise[Option[Long]] = {
+  def post(from: String, message: String): Promise[Unit] = {
 
     def formatMessage(from: String, msg: String): String = "bluk"
 
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", config.token)
-      .addParameter("from", config.hipchat_from)
+      .addParameter("from", "twitOnHip")
       .addParameter("room_id", config.room_id)
-      .addParameter("message", "@%s: %s".format(tweet.fromUser, tweet.text))
+      .addParameter("message", "@%s: %s".format(from, message))
       .POST
 
-    withHttp(_(hipPost OK as.String).option) map (_ ⇒ Some(tweet.id))
+    withHttp(_(hipPost OK as.String)) map (_ ⇒ Unit)
   }
 
   def postTweets(list: List[Tweet]): Promise[Option[Long]] = {
-    val promises = for (tweet ← list) yield {
-      post(tweet)
+    val ids = for (tweet ← list) yield {
+      post(tweet.fromUser, tweet.text)
+      tweet.id
     }
 
-    Promise.all(promises) map { list ⇒
-      list.foldRight(None: Option[Long])(_ orElse _)
-    }
+    Promise apply ids.headOption
   }
 
   def parseJson(jsonString: String): Valid[List[Tweet]] = try {
@@ -90,7 +89,7 @@ object TweetOnHip extends Validation {
   def run(sinceId: Long) {
     var currentSinceId = sinceId
 
-    while (true) {
+    while(true) {
       val promise = lastTweets(currentSinceId) flatMap { validList ⇒
         validList fold (
           errs ⇒ {
@@ -106,7 +105,7 @@ object TweetOnHip extends Validation {
       } onComplete { either ⇒
         either fold (
           e ⇒ println(e),
-          optionId ⇒ optionId map (newId ⇒ currentSinceId = newId)
+          optionId ⇒ optionId map (newId => currentSinceId = newId)
         )
       }
       promise()
