@@ -49,7 +49,7 @@ object TweetOnHip extends Validation {
 
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", config.token)
-      .addParameter("from", "twitOnHip")
+      .addParameter("from", config.hipchat_from)
       .addParameter("room_id", config.room_id)
       .addParameter("message", formatMessage(tweet.fromUser, tweet.text))
       .POST
