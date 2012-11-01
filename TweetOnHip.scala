@@ -102,7 +102,7 @@ object TweetOnHip extends Validation {
   def run(sinceId: Long) {
     var currentSinceId = sinceId
 
-    while(true) {
+    while (true) {
       val promise = lastTweets(currentSinceId) flatMap { validList ⇒
         validList fold (
           errs ⇒ {
@@ -115,11 +115,10 @@ object TweetOnHip extends Validation {
             postTweets(list)
           }
         )
-      } onComplete { either ⇒
-        either fold (
-          e ⇒ println(e),
-          optionId ⇒ optionId map (newId => currentSinceId = newId)
-        )
+      } onComplete {
+        case Left(e)         ⇒ println(e)
+        case Right(Some(id)) ⇒ currentSinceId = newId
+        case _               ⇒
       }
       promise()
       Thread.sleep(config.twitter_check_interval * 1000)
