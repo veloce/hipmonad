@@ -32,13 +32,26 @@ object TweetOnHip extends Validation {
 
   def post(from: String, message: String): Promise[Unit] = {
 
-    def formatMessage(from: String, msg: String): String = "bluk"
+    def formatMessage(from: String, msg: String): String = {
+
+      val urlregex = """(https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])""".r
+      val hashregex = """\#(\w+)""".r
+      val atregex = """@(\w+)""".r
+
+      def repUrl(txt: String) = urlregex.replaceAllIn(txt, """<a href="$1" target="_blank">$1</a>""")
+      def repHash(txt: String) = hashregex.replaceAllIn(txt, """<a href="http://twitter.com/search?q=$1">#$1</a>""")
+      def repAt(txt: String) = atregex.replaceAllIn(txt, """<a href="http://twitter.com/$1">@$1</a>""")
+
+      val repAll = repHash _ compose repAt _ compose repUrl _
+
+      "@%s<br />%s".format(from, repAll(msg))
+    }
 
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", config.token)
       .addParameter("from", "twitOnHip")
       .addParameter("room_id", config.room_id)
-      .addParameter("message", "@%s: %s".format(from, message))
+      .addParameter("message", formatMessage(from, message))
       .POST
 
     withHttp(_(hipPost OK as.String)) map (_ ⇒ Unit)
