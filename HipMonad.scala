@@ -8,7 +8,7 @@ import net.liftweb.json.JsonParser
 import net.liftweb.json.DefaultFormats
 import net.liftweb.json._
 
-object TweetOnHip extends Validation {
+object HipMonad extends Validation {
 
   case class Tweet(
       id: Long,
