@@ -32,26 +32,31 @@ object HipMonad extends Validation {
 
   def post(tweet: Tweet): Promise[String] = {
 
-    def formatMessage(from: String, msg: String): String = {
+    def formatMessage(from: String, msg: String, id: Long): String = {
 
       val urlregex = """(https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])""".r
       val hashregex = """\#(\w+)""".r
       val atregex = """@(\w+)""".r
 
       def repUrl(txt: String) = urlregex.replaceAllIn(txt, """<a href="$1" target="_blank">$1</a>""")
-      def repHash(txt: String) = hashregex.replaceAllIn(txt, """<a href="http://twitter.com/search?q=$1">#$1</a>""")
-      def repAt(txt: String) = atregex.replaceAllIn(txt, """<a href="http://twitter.com/$1">@$1</a>""")
+      def repHash(txt: String) = hashregex.replaceAllIn(txt, """<a href="https://twitter.com/search?q=$1">#$1</a>""")
+      def repAt(txt: String) = atregex.replaceAllIn(txt, """<a href="https://twitter.com/$1">@$1</a>""")
 
       val repAll = repHash _ compose repAt _ compose repUrl _
 
-      "@%s<br />%s".format(from, repAll(msg))
+      """<em>@%1$s</em>
+      <br />
+      %2$s
+      <br />
+      <a href="https://twitter.com/%1$s/status/%3$d">Details</a>
+      """ format(from, repAll(msg), id)
     }
 
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", config.token)
       .addParameter("from", config.hipchat_from)
       .addParameter("room_id", config.room_id)
-      .addParameter("message", formatMessage(tweet.fromUser, tweet.text))
+      .addParameter("message", formatMessage(tweet.fromUser, tweet.text, tweet.id))
       .POST
 
     withHttp(_(hipPost OK as.String))
