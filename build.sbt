@@ -8,6 +8,8 @@ resolvers += "typesafe.com" at "http://repo.typesafe.com/typesafe/releases/"
 
 resolvers += "sonatype" at "http://oss.sonatype.org/content/repositories/releases"
 
+resolvers += "jirafe-github" at "https://raw.github.com/jirafe/mvn-repo/master/releases"
+
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 
 libraryDependencies += "com.github.ornicar" % "scalalib_2.9.1" % "2.6"
