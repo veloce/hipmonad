@@ -30,7 +30,7 @@ object TweetOnHip extends Validation {
     promise
   }
 
-  def post(tweet: Tweet): Promise[Unit] = {
+  def post(tweet: Tweet): Promise[String] = {
 
     def formatMessage(from: String, msg: String): String = {
 
@@ -54,12 +54,12 @@ object TweetOnHip extends Validation {
       .addParameter("message", formatMessage(tweet.fromUser, tweet.text))
       .POST
 
-    withHttp(_(hipPost OK as.String)) map (_ ⇒ Unit)
+    withHttp(_(hipPost OK as.String))
   }
 
   def postTweets(list: List[Tweet]): Promise[Option[Long]] = {
     val ids = for (tweet ← list) yield {
-      post(tweet)
+      post(tweet) onComplete println
       tweet.id
     }
 
