@@ -11,5 +11,5 @@ object config {
   val twitter_check_interval = 60 // time in second between two checks
                                   // beware of twitter search api rate limit
 
-  val hipchat_from = "Jirafe on twitter"
+  val hipchat_from = "Jirafe twitter" // no more than 2 spaces or hipchat is unhappy
 }
