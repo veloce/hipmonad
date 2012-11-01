@@ -14,12 +14,14 @@ object HipMonad extends Validation {
       id: Long,
       created_at: String,
       from_user: String,
+      profile_image_url: String,
       text: String) {
 
     private val fmt = DateTimeFormat forPattern "EEE, dd MMM yyyy HH:mm:ss Z"
 
     def createdAt = fmt.parseDateTime(created_at)
     def fromUser = from_user
+    def profileImgUrl = profile_image_url
     override def toString = "%s: id: %s - %s".format(createdAt, id, fromUser)
   }
 
@@ -32,7 +34,7 @@ object HipMonad extends Validation {
 
   def post(tweet: Tweet): Promise[String] = {
 
-    def formatMessage(from: String, msg: String, id: Long): String = {
+    def formatMessage(from: String, msg: String, id: Long, imgUrl: String): String = {
 
       val urlregex = """(https?://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])""".r
       val hashregex = """\#(\w+)""".r
@@ -44,19 +46,22 @@ object HipMonad extends Validation {
 
       val repAll = repHash _ compose repAt _ compose repUrl _
 
-      """<em>@%1$s</em>
+      """
+      <img alt="%1$s" src="%4$s">
+      &nbsp;<a href="https://twitter.com/%1$s">@%1$s</a>
       <br />
       %2$s
       <br />
       <a href="https://twitter.com/%1$s/status/%3$d">Details</a>
-      """ format(from, repAll(msg), id)
+      """ format(from, repAll(msg), id, imgUrl)
     }
 
     val hipPost = url("http://api.hipchat.com/v1/rooms/message")
       .addQueryParameter("auth_token", config.token)
       .addParameter("from", config.hipchat_from)
       .addParameter("room_id", config.room_id)
-      .addParameter("message", formatMessage(tweet.fromUser, tweet.text, tweet.id))
+      .addParameter("color", config.color)
+      .addParameter("message", formatMessage(tweet.fromUser, tweet.text, tweet.id, tweet.profileImgUrl))
       .POST
 
     withHttp(_(hipPost OK as.String))

@@ -12,4 +12,6 @@ object config {
                                   // beware of twitter search api rate limit
 
   val hipchat_from = "Jirafe twitter" // no more than 2 spaces or hipchat is unhappy
+
+  val color = "purple"
 }
