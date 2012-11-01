@@ -2,6 +2,8 @@ name := "HipMonad"
 
 version := "0.1"
 
+scalaVersion := "2.9.2"
+
 resolvers ++= Seq(
   "repo.codahale.com" at "http://repo.codahale.com/",
   "typesafe.com" at "http://repo.typesafe.com/typesafe/releases/",
