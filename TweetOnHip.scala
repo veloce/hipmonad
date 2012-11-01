@@ -91,7 +91,7 @@ object TweetOnHip extends Validation {
         raw ← rawOption toValid "Twitter api call returned an error"
         tweets ← parseJson(raw)
       } yield tweets filter (e ⇒
-        e.createdAt > DateTime.now - config.twitter_check_interval.second - 30.second)
+        e.createdAt > DateTime.now - config.twitter_check_interval.second - 30.second) take 2
     }
   }
 
