@@ -117,7 +117,7 @@ object TweetOnHip extends Validation {
         )
       } onComplete {
         case Left(e)         ⇒ println(e)
-        case Right(Some(id)) ⇒ currentSinceId = newId
+        case Right(Some(id)) ⇒ currentSinceId = id
         case _               ⇒
       }
       promise()
