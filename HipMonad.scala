@@ -120,8 +120,6 @@ object HipMonad extends Validation {
             Promise apply None
           },
           list ⇒ {
-            println("*----* %s *----*".format(DateTime.now))
-            list foreach println
             postTweets(list)
           }
         )
