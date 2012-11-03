@@ -6,5 +6,8 @@ Post stuff in hipchat using scala
 
     cp config.scala.dist config.scala
     vim config.scala # edit config
-    sbt run
+    sbt
 
+## Generate a standalone jar
+
+    sbt one-jar
